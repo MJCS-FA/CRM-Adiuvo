@@ -1,0 +1,12 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 110" fill="none">
+  <defs>
+    <linearGradient id="iconBg" x1="12" y1="10" x2="96" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E45E4F" />
+      <stop offset="1" stop-color="#A6251C" />
+    </linearGradient>
+  </defs>
+  <rect x="12" y="10" width="84" height="84" rx="12" fill="url(#iconBg)" />
+  <path d="M54.3 24 82 80h-12.3l-4.9-10H43.2l-4.9 10H26L53.7 24h.6Zm0 22.8L47 61.4h14.6l-7.3-14.6Z" fill="#fff"/>
+  <text x="108" y="66" fill="#151515" font-family="Poppins, Segoe UI, Arial, sans-serif" font-size="48" font-weight="500" letter-spacing="1.3">ADIUVO</text>
+  <circle cx="374" cy="29" r="3" fill="#151515"/>
+</svg>

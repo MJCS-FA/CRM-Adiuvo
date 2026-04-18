@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Offline - Visitas</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Poppins, Segoe UI, sans-serif;
+        display: grid;
+        place-items: center;
+        background: #eef3fb;
+        color: #1f2a3d;
+      }
+      .box {
+        width: min(92%, 360px);
+        background: #fff;
+        padding: 20px;
+        border-radius: 14px;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 22px;
+      }
+      p {
+        margin-bottom: 18px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        appearance: none;
+        border: 1px solid #0f1b2d;
+        background: #0f1b2d;
+        color: #fff;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .btn.secondary {
+        background: #fff;
+        color: #0f1b2d;
+      }
+      .hint {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #4c5870;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="box">
+      <h1>Sin conexión</h1>
+      <p>La aplicación está en modo offline. Puedes seguir trabajando y tus cambios se sincronizarán al volver la conexión.</p>
+      <div class="actions">
+        <a id="goAppBtn" class="btn" href="./">Continuar a la app</a>
+        <button id="retryBtn" class="btn secondary" type="button">Reintentar</button>
+      </div>
+      <div class="hint">Cuando vuelva el internet, la app retomará la sincronización.</div>
+    </main>
+    <script>
+      (function () {
+        const retryBtn = document.getElementById('retryBtn');
+        const goAppBtn = document.getElementById('goAppBtn');
+        const OFFLINE_PATH = '/offline.html';
+        const STORAGE_BASE_PATH_KEY = 'visitas.app.basePath';
+        const STORAGE_ENTRY_PATH_KEY = 'visitas.app.entryPath';
+
+        function normalizePath(value, fallback) {
+          const text = String(value || '').trim();
+
+          if (!text) {
+            return fallback;
+          }
+
+          const withSlash = text.startsWith('/') ? text : `/${text}`;
+
+          if (withSlash === '/') {
+            return '/';
+          }
+
+          return withSlash.replace(/\/+$/, '');
+        }
+
+        function resolveBasePathFromLocation() {
+          const currentPath = String(window.location.pathname || '/').trim() || '/';
+
+          if (!currentPath.endsWith(OFFLINE_PATH)) {
+            return '/';
+          }
+
+          const rawBase = currentPath.slice(0, -OFFLINE_PATH.length);
+          const normalized = normalizePath(rawBase, '/');
+
+          return normalized === '/' ? '/' : `${normalized}/`;
+        }
+
+        function resolveAppEntryPath() {
+          let storedEntryPath = '';
+          let storedBasePath = '';
+
+          try {
+            storedEntryPath = String(localStorage.getItem(STORAGE_ENTRY_PATH_KEY) || '').trim();
+            storedBasePath = String(localStorage.getItem(STORAGE_BASE_PATH_KEY) || '').trim();
+          } catch (error) {
+            storedEntryPath = '';
+            storedBasePath = '';
+          }
+
+          if (storedEntryPath) {
+            return normalizePath(storedEntryPath, '/directorio');
+          }
+
+          const locationBasePath = resolveBasePathFromLocation();
+          const normalizedStoredBase = normalizePath(storedBasePath, locationBasePath || '/');
+          const basePath = normalizedStoredBase === '/' ? '' : normalizedStoredBase;
+          return `${basePath}/directorio`;
+        }
+
+        const appEntryPath = resolveAppEntryPath();
+
+        goAppBtn.setAttribute('href', appEntryPath);
+
+        retryBtn.addEventListener('click', function () {
+          window.location.assign(appEntryPath);
+        });
+
+        window.addEventListener('online', function () {
+          window.location.assign(appEntryPath);
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 216" fill="none">
+  <defs>
+    <linearGradient id="bgRed" x1="108" y1="10" x2="108" y2="206" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#651216" />
+      <stop offset="0.5" stop-color="#B7191E" />
+      <stop offset="1" stop-color="#F01821" />
+    </linearGradient>
+    <clipPath id="iconClip">
+      <rect x="10" y="10" width="196" height="196" rx="46" />
+    </clipPath>
+  </defs>
+
+  <rect x="10" y="10" width="196" height="196" rx="46" fill="url(#bgRed)" />
+
+  <g clip-path="url(#iconClip)">
+    <rect x="10" y="62" width="196" height="8" fill="#3E090D" opacity="0.8" />
+    <rect x="10" y="98" width="196" height="8" fill="#3E090D" opacity="0.65" />
+    <rect x="10" y="134" width="196" height="8" fill="#3E090D" opacity="0.5" />
+  </g>
+
+  <path
+    fill="#fff"
+    fill-rule="evenodd"
+    d="M108 28 177 178h-30l-15-35H84l-15 35H39L108 28Zm0 61-18 41h36l-18-41Z"
+  />
+  <path
+    fill="#fff"
+    d="M40 194c18-23 50-36 94-36h41v23h-41c-31 0-53 8-66 25H40Z"
+  />
+</svg>
