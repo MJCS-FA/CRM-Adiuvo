@@ -1,4 +1,4 @@
-﻿import {
+import {
   ClockCircleOutlined,
   LeftOutlined,
   RightOutlined,
@@ -1154,180 +1154,427 @@ export function DashboardPage() {
     <div className="page-wrap home-page">
       {contextHolder}
 
-      <Typography.Title level={4} style={{ marginTop: 0 }}>
-        Principal
-      </Typography.Title>
+      <style>{`
+        .home-page { display: flex; flex-direction: column; gap: 20px; padding-bottom: 8px; }
 
-      {!loading && !hasVisitador ? (
-        <Alert
-          type="warning"
-          showIcon
-          style={{ marginBottom: 12 }}
-          message="No se encontró un visitador para esta sesión"
-          description="Los indicadores se mostrarán en cero hasta que exista relación en tblVisitador."
-        />
-      ) : null}
+        /* ── KPI Strip ── */
+        .home-kpi-strip {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+        .home-kpi-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          padding: 20px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: var(--shadow-sm);
+          transition: box-shadow var(--duration-normal) var(--ease-out);
+          position: relative;
+          overflow: hidden;
+        }
+        .home-kpi-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, var(--adiuvo-red), var(--adiuvo-red-deep));
+        }
+        .home-kpi-card--blue::before { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
+        .home-kpi-card--green::before { background: linear-gradient(90deg, #10b981, #059669); }
+        .home-kpi-card:hover { box-shadow: var(--shadow-lg); }
+        .home-kpi-header { display: flex; align-items: center; justify-content: space-between; }
+        .home-kpi-title { font-size: 12px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.6px; }
+        .home-kpi-icon {
+          width: 36px; height: 36px; border-radius: var(--radius-md);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 17px; background: var(--adiuvo-red-light); color: var(--adiuvo-red);
+        }
+        .home-kpi-icon--blue { background: #eff6ff; color: #3b82f6; }
+        .home-kpi-icon--green { background: #f0fdf4; color: #10b981; }
+        .home-kpi-metrics { display: flex; gap: 24px; }
+        .home-kpi-metric { display: flex; flex-direction: column; gap: 2px; }
+        .home-kpi-metric-val { font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1; }
+        .home-kpi-metric-lbl { font-size: 11px; color: var(--text-tertiary); font-weight: 500; }
+        .home-kpi-compliance {
+          display: flex; align-items: center; gap: 8px;
+          padding: 6px 12px; border-radius: var(--radius-full);
+          background: var(--bg-subtle); width: fit-content;
+        }
+        .home-kpi-compliance-pct { font-size: 13px; font-weight: 700; color: var(--adiuvo-red); }
+        .home-kpi-compliance-lbl { font-size: 11px; color: var(--text-tertiary); }
+        .home-kpi-cycle { font-size: 11px; color: var(--text-tertiary); font-style: italic; margin-top: 2px; }
 
-      <Row gutter={[12, 12]} className="home-summary-row">
-        <Col xs={24} lg={8}>
-            <SummaryBlock
-              title="Visitas Médicas"
-              cycleName={cycleName}
-              agendados={medicalSummary.agendados}
-              completados={medicalSummary.completados}
-            cumplimiento={medicalSummary.cumplimiento}
-            loading={loading}
-          />
-        </Col>
+        /* Birthday card */
+        .home-birthday-card {
+          background: linear-gradient(135deg, #fff1f2 0%, #fff7ed 100%);
+          border: 1px solid #fecdd3;
+          border-radius: var(--radius-lg);
+          padding: 20px 24px;
+          display: flex; flex-direction: column; gap: 10px;
+          box-shadow: var(--shadow-sm);
+          position: relative; overflow: hidden;
+        }
+        .home-birthday-card::before {
+          content: '🎂';
+          position: absolute; top: -4px; right: 16px;
+          font-size: 48px; opacity: 0.12;
+        }
+        .home-birthday-name { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .home-birthday-date { font-size: 13px; color: var(--adiuvo-red); font-weight: 600; }
+        .home-birthday-counter { font-size: 11px; color: var(--text-tertiary); }
 
-        <Col xs={24} lg={8}>
-          <SummaryBlock
-            title="Visitas a Sucursal"
-            cycleName={cycleName}
-            agendados={branchSummary.agendados}
-            completados={branchSummary.completados}
-            cumplimiento={branchSummary.cumplimiento}
-            loading={loading}
-          />
-        </Col>
+        /* ── Filters Row ── */
+        .home-filters-row {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          padding: 16px 24px;
+          display: flex; align-items: center; gap: 20px;
+          box-shadow: var(--shadow-xs);
+        }
+        .home-filter-toggle { display: flex; gap: 8px; }
+        .home-filter-toggle-btn {
+          padding: 7px 18px; border-radius: var(--radius-full);
+          border: 1.5px solid var(--border-default); background: transparent;
+          font-size: 13px; font-weight: 600; cursor: pointer;
+          color: var(--text-secondary);
+          transition: all var(--duration-normal) var(--ease-out);
+        }
+        .home-filter-toggle-btn.active {
+          background: var(--adiuvo-red); color: #fff; border-color: var(--adiuvo-red);
+          box-shadow: 0 2px 8px rgba(232,60,56,0.3);
+        }
+        .home-filter-divider { width: 1px; height: 28px; background: var(--border-default); }
+        .home-filter-check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .home-filter-check input { accent-color: var(--adiuvo-red); width: 15px; height: 15px; }
+        .home-filter-check span { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        .home-filter-date-btn {
+          margin-left: auto; display: flex; align-items: center; gap: 8px;
+          padding: 7px 16px; border-radius: var(--radius-md);
+          border: 1.5px solid var(--border-default); background: var(--bg-subtle);
+          font-size: 13px; font-weight: 600; color: var(--text-primary); cursor: pointer;
+          transition: all var(--duration-normal) var(--ease-out);
+        }
+        .home-filter-date-btn:hover { border-color: var(--adiuvo-red); color: var(--adiuvo-red); }
 
-        <Col xs={24} lg={8}>
-          <AppCard className="home-birthday-card" loading={loading}>
-            <div className="home-birthday-title-wrap">
-              <span className="home-birthday-cake-icon" aria-hidden="true" />
-              <Typography.Title level={4} className="home-summary-title">
-                Cumpleañeros del Mes
-              </Typography.Title>
+        /* ── Visit Grid ── */
+        .home-visit-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 14px;
+        }
+        .home-visit-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          display: flex;
+          box-shadow: var(--shadow-xs);
+          transition: all var(--duration-normal) var(--ease-out);
+          cursor: default;
+        }
+        .home-visit-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+        .home-visit-card__stripe {
+          width: 4px; flex-shrink: 0;
+          background: var(--adiuvo-red);
+        }
+        .home-visit-card__stripe--in-progress { background: #f59e0b; }
+        .home-visit-card__stripe--completed { background: #10b981; }
+        .home-visit-card__stripe--cancelled { background: #94a3b8; }
+        .home-visit-card__body { flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .home-visit-card__name { font-size: 14px; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .home-visit-card__status-row { display: flex; align-items: center; gap: 6px; }
+        .home-visit-card__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--adiuvo-red); flex-shrink: 0; }
+        .home-visit-card__dot--in-progress { background: #f59e0b; }
+        .home-visit-card__dot--completed { background: #10b981; }
+        .home-visit-card__dot--cancelled { background: #94a3b8; }
+        .home-visit-card__status-lbl { font-size: 12px; color: var(--text-tertiary); font-weight: 500; }
+        .home-visit-card__meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+        .home-visit-card__meta-icon { color: var(--text-tertiary); font-size: 12px; }
+        .home-visit-card__datetime { display: flex; gap: 12px; margin-top: 4px; }
+        .home-visit-card__dt-chip {
+          display: flex; align-items: center; gap: 5px;
+          padding: 3px 10px; border-radius: var(--radius-full);
+          background: var(--bg-subtle); font-size: 11px; font-weight: 600; color: var(--text-secondary);
+        }
+        .home-visit-card__actions {
+          padding: 14px 14px 14px 0;
+          display: flex; flex-direction: column; gap: 6px; justify-content: center;
+        }
+        .home-visit-action-btn {
+          display: flex; align-items: center; justify-content: center;
+          width: 34px; height: 34px; border-radius: 50%;
+          border: 1.5px solid var(--border-default);
+          background: var(--bg-subtle); cursor: pointer;
+          font-size: 14px; color: var(--text-secondary);
+          transition: all var(--duration-fast) var(--ease-out);
+        }
+        .home-visit-action-btn:hover { border-color: var(--adiuvo-red); color: var(--adiuvo-red); background: var(--adiuvo-red-light); }
+        .home-visit-action-btn--start { border-color: var(--adiuvo-red); color: var(--adiuvo-red); background: var(--adiuvo-red-light); }
+        .home-visit-action-btn--start:hover { background: var(--adiuvo-red); color: #fff; }
+        .home-visit-action-btn--follow { border-color: #f59e0b; color: #f59e0b; background: #fffbeb; }
+        .home-visit-action-btn--follow:hover { background: #f59e0b; color: #fff; }
+
+        .home-empty-state {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 12px; padding: 60px 24px;
+          background: var(--bg-card); border-radius: var(--radius-lg);
+          border: 1px solid var(--border-default);
+        }
+        .home-empty-state-icon { font-size: 48px; opacity: 0.3; }
+        .home-empty-state-text { font-size: 15px; font-weight: 600; color: var(--text-tertiary); }
+        .home-loading-grid {
+          display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px;
+        }
+        .home-skeleton-card {
+          background: var(--bg-card); border-radius: var(--radius-lg);
+          height: 120px; border: 1px solid var(--border-default);
+          animation: homeSkel 1.5s ease-in-out infinite;
+        }
+        @keyframes homeSkel {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
+
+      {/* ── KPI Strip ── */}
+      <div className="home-kpi-strip">
+        <div className="home-kpi-card">
+          <div className="home-kpi-header">
+            <span className="home-kpi-title">Visitas Médicas</span>
+            <div className="home-kpi-icon"><MedicineBoxOutlined /></div>
+          </div>
+          <div className="home-kpi-metrics">
+            <div className="home-kpi-metric">
+              <span className="home-kpi-metric-val">{loading ? '—' : medicalSummary.agendados}</span>
+              <span className="home-kpi-metric-lbl">Agendadas</span>
             </div>
+            <div className="home-kpi-metric">
+              <span className="home-kpi-metric-val">{loading ? '—' : medicalSummary.completados}</span>
+              <span className="home-kpi-metric-lbl">Completadas</span>
+            </div>
+          </div>
+          <div className="home-kpi-compliance">
+            <span className="home-kpi-compliance-pct">{loading ? '—' : `${medicalSummary.cumplimiento}%`}</span>
+            <span className="home-kpi-compliance-lbl">Cumplimiento</span>
+          </div>
+          {cycleName && <span className="home-kpi-cycle">{cycleName}</span>}
+        </div>
 
-            <Typography.Text className="home-cycle-name">
-              {(birthdayMonthLabel || '').replace(/^./, (letter) => letter.toUpperCase())}
-            </Typography.Text>
+        <div className="home-kpi-card home-kpi-card--blue">
+          <div className="home-kpi-header">
+            <span className="home-kpi-title">Visitas Sucursal</span>
+            <div className="home-kpi-icon home-kpi-icon--blue"><ShopOutlined /></div>
+          </div>
+          <div className="home-kpi-metrics">
+            <div className="home-kpi-metric">
+              <span className="home-kpi-metric-val">{loading ? '—' : branchSummary.agendados}</span>
+              <span className="home-kpi-metric-lbl">Agendadas</span>
+            </div>
+            <div className="home-kpi-metric">
+              <span className="home-kpi-metric-val">{loading ? '—' : branchSummary.completados}</span>
+              <span className="home-kpi-metric-lbl">Completadas</span>
+            </div>
+          </div>
+          <div className="home-kpi-compliance" style={{ '--comp-color': '#3b82f6' }}>
+            <span className="home-kpi-compliance-pct" style={{ color: '#3b82f6' }}>{loading ? '—' : `${branchSummary.cumplimiento}%`}</span>
+            <span className="home-kpi-compliance-lbl">Cumplimiento</span>
+          </div>
+        </div>
 
-            {currentBirthday ? (
-              <div className="home-birthday-content">
-                <Typography.Text className="home-birthday-name">
-                  {getBirthdayDisplayName(currentBirthday.nombreMedico)}
-                </Typography.Text>
-                <Typography.Text className="home-birthday-date">
-                  Dia {currentBirthday.diaCumple}
-                </Typography.Text>
-                <Typography.Text className="home-birthday-rotating">
-                  Mostrando {birthdayIndex + 1} de {birthdays.length}
-                </Typography.Text>
-              </div>
-            ) : (
-              <Empty description="Mes sin cumpleañeros" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            )}
-          </AppCard>
-        </Col>
-      </Row>
-
-      <div className="dashboard-main-content">
-        <DashboardFilters value={filters} onChange={setFilters} />
-
-        {!loading && !hasVisitador ? (
-          <Alert
-            type="warning"
-            showIcon
-            message="No se encontró un visitador para esta sesión"
-            description="No es posible obtener visitas hasta tener relación en tblVisitador."
-          />
-        ) : null}
-
-        <VisitList
-          visits={filteredVisits}
-          loading={loadingVisits || loadingReferences}
-          onVisitAction={handleVisitAction}
-        />
+        <div className="home-birthday-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>🎂</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#9f1239', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Cumpleañeros · {(birthdayMonthLabel || '').replace(/^./, (l) => l.toUpperCase())}
+            </span>
+          </div>
+          {loading ? (
+            <span style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>Cargando...</span>
+          ) : currentBirthday ? (
+            <>
+              <span className="home-birthday-name">{getBirthdayDisplayName(currentBirthday.nombreMedico)}</span>
+              <span className="home-birthday-date">🗓 Día {currentBirthday.diaCumple}</span>
+              {birthdays.length > 1 && (
+                <span className="home-birthday-counter">{birthdayIndex + 1} de {birthdays.length} cumpleañeros</span>
+              )}
+            </>
+          ) : (
+            <span style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>Sin cumpleañeros este mes</span>
+          )}
+        </div>
       </div>
 
+      {/* ── Filters Row ── */}
+      <div className="home-filters-row">
+        <div className="home-filter-toggle">
+          <button
+            className={`home-filter-toggle-btn ${filters.visitType === 'medical' ? 'active' : ''}`}
+            onClick={() => setFilters((c) => ({ ...c, visitType: 'medical' }))}
+          >
+            <MedicineBoxOutlined style={{ marginRight: 6 }} />Médicas
+          </button>
+          <button
+            className={`home-filter-toggle-btn ${filters.visitType === 'branch' ? 'active' : ''}`}
+            onClick={() => setFilters((c) => ({ ...c, visitType: 'branch' }))}
+          >
+            <ShopOutlined style={{ marginRight: 6 }} />Sucursales
+          </button>
+        </div>
+
+        <div className="home-filter-divider" />
+
+        <label className="home-filter-check">
+          <input
+            type="checkbox"
+            checked={filters.showCompleted}
+            onChange={(e) => setFilters((c) => ({ ...c, showCompleted: e.target.checked }))}
+          />
+          <span>Solo completadas</span>
+        </label>
+
+        <DashboardFilters value={filters} onChange={setFilters} />
+      </div>
+
+      {/* ── Visit List ── */}
+      {loadingVisits || loadingReferences ? (
+        <div className="home-loading-grid">
+          {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="home-skeleton-card" />)}
+        </div>
+      ) : filteredVisits.length === 0 ? (
+        <div className="home-empty-state">
+          <span className="home-empty-state-icon">📋</span>
+          <span className="home-empty-state-text">Sin visitas para el filtro seleccionado</span>
+        </div>
+      ) : (
+        <div className="home-visit-grid">
+          {filteredVisits.map((visit) => {
+            const stripeClass = {
+              in_progress: 'home-visit-card__stripe--in-progress',
+              completed: 'home-visit-card__stripe--completed',
+              cancelled: 'home-visit-card__stripe--cancelled'
+            }[visit.statusKey] || '';
+            const dotClass = {
+              in_progress: 'home-visit-card__dot--in-progress',
+              completed: 'home-visit-card__dot--completed',
+              cancelled: 'home-visit-card__dot--cancelled'
+            }[visit.statusKey] || '';
+            const action = resolvePrimaryAction(visit.statusKey);
+            const btnClass = {
+              start: 'home-visit-action-btn--start',
+              follow: 'home-visit-action-btn--follow'
+            }[action.key] || '';
+
+            return (
+              <div key={visit.id} className="home-visit-card">
+                <div className={`home-visit-card__stripe ${stripeClass}`} />
+                <div className="home-visit-card__body">
+                  <div className="home-visit-card__name">{visit.displayName}</div>
+                  <div className="home-visit-card__status-row">
+                    <div className={`home-visit-card__dot ${dotClass}`} />
+                    <span className="home-visit-card__status-lbl">{visit.statusLabel || visit.statusKey}</span>
+                  </div>
+                  {visit.type === 'medical' && (
+                    <>
+                      <div className="home-visit-card__meta">
+                        <MedicineBoxOutlined className="home-visit-card__meta-icon" />
+                        <span>{visit.especialidad}</span>
+                      </div>
+                      <div className="home-visit-card__meta">
+                        <EnvironmentOutlined className="home-visit-card__meta-icon" />
+                        <span>{visit.hospital}</span>
+                      </div>
+                    </>
+                  )}
+                  {visit.type === 'branch' && visit.direccion && (
+                    <div className="home-visit-card__meta">
+                      <EnvironmentOutlined className="home-visit-card__meta-icon" />
+                      <span>{visit.direccion}</span>
+                    </div>
+                  )}
+                  <div className="home-visit-card__datetime">
+                    <div className="home-visit-card__dt-chip">
+                      <CalendarOutlined />
+                      {formatDate(visit.fechaVisita)}
+                    </div>
+                    <div className="home-visit-card__dt-chip">
+                      <ClockCircleOutlined />
+                      {formatTime(visit.horaVisita)}
+                    </div>
+                  </div>
+                </div>
+                <div className="home-visit-card__actions">
+                  <button
+                    className="home-visit-action-btn"
+                    title="Ficha"
+                    onClick={() => handleVisitAction(visit, { key: 'file' })}
+                  >
+                    <FileTextOutlined />
+                  </button>
+                  <button
+                    className={`home-visit-action-btn ${btnClass}`}
+                    title={action.label}
+                    onClick={() => handleVisitAction(visit, action)}
+                  >
+                    {action.icon}
+                  </button>
+                  {visit.canChangeDate && (
+                    <button
+                      className="home-visit-action-btn"
+                      title="Cambiar fecha"
+                      onClick={() => handleVisitAction(visit, { key: 'change_date' })}
+                    >
+                      <CalendarOutlined />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Drawers / Modals (unchanged logic) ── */}
       <Drawer
         title="Cambiar Visita"
         open={isChangeVisitDrawerOpen}
         width={520}
-        onClose={() => {
-          if (!savingVisitUpdate) {
-            closeChangeVisitDrawer();
-          }
-        }}
+        onClose={() => { if (!savingVisitUpdate) closeChangeVisitDrawer(); }}
         destroyOnClose
         maskClosable={!savingVisitUpdate}
         className="dashboard-change-visit-drawer"
       >
         <Form layout="vertical" form={changeVisitForm}>
-          <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>
-            Detalle del Cambio
-          </Typography.Title>
-
-          <Form.Item
-            label="¿Desea reagendar la visita?"
-            name="reagendar"
-            rules={[{ required: true, message: 'Seleccione Sí o No.' }]}
-          >
+          <Typography.Title level={5} style={{ marginTop: 0, marginBottom: 12 }}>Detalle del Cambio</Typography.Title>
+          <Form.Item label="¿Desea reagendar la visita?" name="reagendar" rules={[{ required: true, message: 'Seleccione Sí o No.' }]}>
             <Radio.Group>
               <Radio value={true}>Sí</Radio>
               <Radio value={false}>No</Radio>
             </Radio.Group>
           </Form.Item>
-
-          <Form.Item
-            label="Motivo"
-            name="codigoMotivoCancelacion"
-            rules={[{ required: true, message: 'Seleccione el motivo.' }]}
-          >
-            <AppSelect
-              showSearch
-              optionFilterProp="label"
-              placeholder="Seleccionar motivo"
-              loading={loadingCancelReasons}
-              options={cancelReasonOptions}
-            />
+          <Form.Item label="Motivo" name="codigoMotivoCancelacion" rules={[{ required: true, message: 'Seleccione el motivo.' }]}>
+            <AppSelect showSearch optionFilterProp="label" placeholder="Seleccionar motivo" loading={loadingCancelReasons} options={cancelReasonOptions} />
           </Form.Item>
-
           {reagendarDecision === true ? (
             <>
-              <Form.Item
-                label="Fecha"
-                name="fechaProgramada"
-                rules={[{ required: true, message: 'Seleccione la nueva fecha.' }]}
-              >
+              <Form.Item label="Fecha" name="fechaProgramada" rules={[{ required: true, message: 'Seleccione la nueva fecha.' }]}>
                 <DatePicker className="dashboard-change-date-input" format="YYYY-MM-DD" />
               </Form.Item>
-
-              <Form.Item
-                label="Hora"
-                name="horaProgramada"
-                rules={[{ required: true, message: 'Seleccione la nueva hora.' }]}
-              >
+              <Form.Item label="Hora" name="horaProgramada" rules={[{ required: true, message: 'Seleccione la nueva hora.' }]}>
                 <TimePicker className="dashboard-change-date-input" format="HH:mm:ss" />
               </Form.Item>
             </>
           ) : null}
-
-          <Form.Item
-            label="Observaciones"
-            name="observaciones"
-            rules={[{ required: true, message: 'Ingrese observaciones.' }]}
-          >
+          <Form.Item label="Observaciones" name="observaciones" rules={[{ required: true, message: 'Ingrese observaciones.' }]}>
             <AppInput type="textarea" rows={4} placeholder="Ingrese observaciones..." />
           </Form.Item>
-
           <div className="dashboard-change-visit-actions">
-            <AppButton
-              variant="outline"
-              onClick={closeChangeVisitDrawer}
-              disabled={savingVisitUpdate}
-            >
-              Regresar
-            </AppButton>
-            <AppButton
-              onClick={handleSubmitVisitChange}
-              loading={savingVisitUpdate}
-              disabled={savingVisitUpdate}
-            >
-              Actualizar
-            </AppButton>
+            <AppButton variant="outline" onClick={closeChangeVisitDrawer} disabled={savingVisitUpdate}>Regresar</AppButton>
+            <AppButton onClick={handleSubmitVisitChange} loading={savingVisitUpdate} disabled={savingVisitUpdate}>Actualizar</AppButton>
           </div>
         </Form>
       </Drawer>
@@ -1343,25 +1590,13 @@ export function DashboardPage() {
         <Typography.Paragraph style={{ marginBottom: 8 }}>
           No puede iniciar una visita ya que tiene una en ejecución.
         </Typography.Paragraph>
-
         <div className="dashboard-running-visit-details">
-          <Typography.Text>
-            <strong>Nombre:</strong>{' '}
-            {runningVisitConflict?.displayName || activeVisitInProgress?.displayName || 'N/A'}
-          </Typography.Text>
-          <Typography.Text>
-            <strong>Fecha:</strong>{' '}
-            {formatDate(runningVisitConflict?.fechaVisita || activeVisitInProgress?.fechaVisita)}
-          </Typography.Text>
-          <Typography.Text>
-            <strong>Hora:</strong>{' '}
-            {formatTime(runningVisitConflict?.horaVisita || activeVisitInProgress?.horaVisita)}
-          </Typography.Text>
+          <Typography.Text><strong>Nombre:</strong> {runningVisitConflict?.displayName || activeVisitInProgress?.displayName || 'N/A'}</Typography.Text>
+          <Typography.Text><strong>Fecha:</strong> {formatDate(runningVisitConflict?.fechaVisita || activeVisitInProgress?.fechaVisita)}</Typography.Text>
+          <Typography.Text><strong>Hora:</strong> {formatTime(runningVisitConflict?.horaVisita || activeVisitInProgress?.horaVisita)}</Typography.Text>
         </div>
       </Modal>
     </div>
   );
 }
-
-
 

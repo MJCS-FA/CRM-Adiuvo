@@ -1,4 +1,4 @@
-﻿import {
+import {
   EyeOutlined,
   FileExcelOutlined,
   FileImageOutlined,
@@ -9,7 +9,7 @@
   ReloadOutlined,
   SearchOutlined
 } from '@ant-design/icons';
-import { Empty, Spin, Typography, message } from 'antd';
+import { Alert, Empty, Spin, Typography, message } from 'antd';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppButton, AppCard, AppInput, AppModal, AppSelect } from '../../components/ui';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -585,224 +585,241 @@ export function MultimediaPage() {
     viewerState.kind === 'video' || viewerState.kind === 'pdf';
 
   return (
-    <div className="page-wrap multimedia-page">
+    <div className="media-page">
       {contextHolder}
 
-      <div className="multimedia-header">
-        <Typography.Title level={4}>Multimedia</Typography.Title>
+      <style>{`
+        .media-page { display: flex; flex-direction: column; gap: 20px; }
+
+        .media-header { display: flex; align-items: center; justify-content: space-between; }
+        .media-header-title { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+
+        /* ── Filters ── */
+        .media-filters-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          padding: 20px 24px;
+          display: flex; gap: 16px; align-items: flex-end;
+          box-shadow: var(--shadow-xs);
+        }
+        .media-filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .media-filter-label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .media-refresh-btn {
+          display: flex; align-items: center; gap: 8px;
+          padding: 8px 16px; border-radius: var(--radius-md);
+          border: 1.5px solid var(--border-default); background: var(--bg-card);
+          font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+          transition: 0.2s;
+        }
+        .media-refresh-btn:hover { border-color: var(--adiuvo-red); color: var(--adiuvo-red); }
+
+        /* ── Grid ── */
+        .media-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+          gap: 16px;
+        }
+
+        .media-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          display: flex; flex-direction: column;
+          transition: all var(--duration-normal) var(--ease-out);
+          box-shadow: var(--shadow-xs);
+        }
+        .media-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--adiuvo-red-light); }
+
+        .media-thumb {
+          position: relative; width: 100%; aspect-ratio: 16/10;
+          background: var(--bg-subtle); overflow: hidden;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .media-thumb-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+        .media-card:hover .media-thumb-img { transform: scale(1.05); }
+
+        .media-kind-badge {
+          position: absolute; top: 12px; left: 12px;
+          display: flex; align-items: center; gap: 5px;
+          padding: 4px 10px; border-radius: var(--radius-full);
+          font-size: 10px; font-weight: 800; text-transform: uppercase;
+          backdrop-filter: blur(8px);
+          color: #fff;
+        }
+        .media-kind-badge.is-video { background: rgba(232, 60, 56, 0.85); }
+        .media-kind-badge.is-pdf { background: rgba(59, 130, 246, 0.85); }
+        .media-kind-badge.is-excel { background: rgba(16, 185, 129, 0.85); }
+        .media-kind-badge.is-image { background: rgba(139, 92, 246, 0.85); }
+        .media-kind-badge.is-other { background: rgba(107, 114, 128, 0.85); }
+
+        .media-card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .media-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; line-height: 1.3; }
+        .media-card-desc { font-size: 12px; color: var(--text-tertiary); line-height: 1.5; margin: 0; flex: 1; }
+
+        .media-card-footer {
+          padding: 12px 16px; border-top: 1px solid var(--border-light);
+          display: flex; align-items: center; justify-content: space-between;
+          background: var(--bg-subtle);
+        }
+        .media-file-name { font-size: 11px; font-weight: 600; color: var(--text-tertiary); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .media-action-btn {
+          width: 34px; height: 34px; border-radius: 50%;
+          border: none; background: var(--adiuvo-red); color: #fff;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; transition: 0.2s; box-shadow: 0 2px 6px rgba(232,60,56,0.3);
+        }
+        .media-action-btn:hover { background: var(--adiuvo-red-deep); transform: scale(1.1); }
+
+        .media-empty {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 16px; padding: 80px 24px;
+          background: var(--bg-card); border-radius: var(--radius-lg);
+          border: 1px solid var(--border-default); color: var(--text-tertiary);
+        }
+        .media-empty-icon { font-size: 48px; opacity: 0.2; }
+
+        .media-loading { display: flex; align-items: center; justify-content: center; padding: 100px; }
+
+        /* Viewer Fullscreen */
+        .media-viewer-wrap.is-fullscreen .ant-modal-content { border-radius: 0; background: #000; }
+        .media-viewer-wrap.is-fullscreen .ant-modal-header { background: #111; border-bottom: 1px solid #222; }
+        .media-viewer-wrap.is-fullscreen .ant-modal-title { color: #fff; }
+        .media-viewer-wrap.is-fullscreen .ant-modal-close { color: #fff; }
+
+        .media-viewer-video { width: 100%; height: 100%; max-height: calc(100vh - 180px); background: #000; }
+        .media-viewer-frame { width: 100%; height: 100%; border: none; background: #fff; border-radius: 4px; }
+        .media-viewer-image { max-width: 100%; max-height: calc(100vh - 200px); object-fit: contain; }
+      `}</style>
+
+      {/* ── Header ── */}
+      <div className="media-header">
+        <div className="media-header-title">Biblioteca Multimedia</div>
         <button
-          type="button"
-          className="multimedia-refresh-btn"
+          className="media-refresh-btn"
           onClick={refreshData}
           disabled={refreshing || loadingBootstrap}
         >
           <ReloadOutlined spin={refreshing} />
-          Actualizar
+          <span>Sincronizar</span>
         </button>
       </div>
 
-      <AppCard className="multimedia-filters-card" loading={loadingBootstrap}>
-        <div className="multimedia-filters-grid">
-          <div className="multimedia-filter-item">
-            <Typography.Text className="multimedia-filter-label">
-              Tipo de Archivo
-            </Typography.Text>
-            <AppSelect
-              allowClear
-              showSearch
-              optionFilterProp="label"
-              placeholder="Seleccionar..."
-              value={filters.codigoTipoMultimedia}
-              options={typeOptions}
-              onChange={(value) =>
-                setFilters((current) => ({
-                  ...current,
-                  codigoTipoMultimedia: normalizeTipoFilter(value)
-                }))
-              }
-            />
-          </div>
-
-          <div className="multimedia-filter-item">
-            <Typography.Text className="multimedia-filter-label">
-              Buscar
-            </Typography.Text>
-            <AppInput
-              placeholder="Nombre, descripción o archivo..."
-              prefix={<SearchOutlined />}
-              value={filters.buscar}
-              onChange={(event) =>
-                setFilters((current) => ({
-                  ...current,
-                  buscar: event.target.value || ''
-                }))
-              }
-            />
-          </div>
+      {/* ── Filters ── */}
+      <div className="media-filters-card">
+        <div className="media-filter-group" style={{ flex: 1.5 }}>
+          <span className="media-filter-label">Búsqueda</span>
+          <AppInput
+            placeholder="Buscar por nombre, descripción..."
+            prefix={<SearchOutlined style={{ color: 'var(--text-tertiary)' }} />}
+            value={filters.buscar}
+            onChange={(e) => setFilters((c) => ({ ...c, buscar: e.target.value || '' }))}
+          />
         </div>
-      </AppCard>
+        <div className="media-filter-group">
+          <span className="media-filter-label">Tipo</span>
+          <AppSelect
+            allowClear showSearch optionFilterProp="label"
+            placeholder="Todos los tipos"
+            value={filters.codigoTipoMultimedia}
+            options={typeOptions}
+            onChange={(v) => setFilters((c) => ({ ...c, codigoTipoMultimedia: normalizeTipoFilter(v) }))}
+          />
+        </div>
+      </div>
 
-      {offlineModuleMessage ? (
-        <AppCard className="multimedia-offline-note">
-          <Typography.Text>{offlineModuleMessage}</Typography.Text>
-        </AppCard>
-      ) : null}
+      {offlineModuleMessage && (
+        <Alert
+          type="info" showIcon
+          message="Modo Offline"
+          description={offlineModuleMessage}
+          style={{ borderRadius: 'var(--radius-md)' }}
+        />
+      )}
 
-      <AppCard className="multimedia-grid-card">
-        {loadingItems ? (
-          <div className="multimedia-loading">
-            <Spin size="large" />
-          </div>
-        ) : items.length === 0 ? (
-          <Empty description="Sin resultados" />
-        ) : (
-          <div className="multimedia-grid">
-            {items.map((item) => {
-              const cardKey = buildCardKey(item);
-              const metadata = inferMultimediaKind(item);
-              const portadaKey = normalizeS3Key(item.s3KeyPortada);
-              const portadaUrl = portadaKey ? normalizeText(coverUrlByKey[portadaKey]) : '';
-              const hasCoverError = Boolean(portadaKey && coverErrorByKey[portadaKey]);
-              const hasCoverLoading = Boolean(portadaKey && coverLoadingByKey[portadaKey]);
-              const canLoadCover = Boolean(portadaUrl && !hasCoverError);
-              const fileName = normalizeText(item.nombreArchivo) || 'Sin nombre de archivo';
+      {/* ── Content ── */}
+      {loadingItems ? (
+        <div className="media-loading">
+          <Spin size="large" />
+        </div>
+      ) : items.length === 0 ? (
+        <div className="media-empty">
+          <PictureOutlined className="media-empty-icon" />
+          <span style={{ fontWeight: 600 }}>No se encontraron archivos multimedia</span>
+          <span style={{ fontSize: 13 }}>Intenta con otros términos de búsqueda o filtros.</span>
+        </div>
+      ) : (
+        <div className="media-grid">
+          {items.map((item) => {
+            const cardKey = buildCardKey(item);
+            const metadata = inferMultimediaKind(item);
+            const portadaKey = normalizeS3Key(item.s3KeyPortada);
+            const portadaUrl = portadaKey ? normalizeText(coverUrlByKey[portadaKey]) : '';
+            const hasCoverLoading = Boolean(portadaKey && coverLoadingByKey[portadaKey]);
 
-              return (
-                <article key={cardKey} className="multimedia-item-card">
-                  <div className="multimedia-cover-wrap">
-                    {canLoadCover ? (
-                      <img
-                        src={portadaUrl}
-                        alt={normalizeText(item.nombreMultimedia) || 'Portada multimedia'}
-                        className="multimedia-cover-image"
-                        loading="lazy"
-                        onError={() => {
-                          if (!portadaKey) {
-                            return;
-                          }
-
-                          setCoverErrorByKey((current) => ({
-                            ...current,
-                            [portadaKey]: true
-                          }));
-                        }}
-                      />
-                    ) : hasCoverLoading ? (
-                      <div className="multimedia-cover-loading">
-                        <Spin size="small" />
-                        <span>Cargando portada...</span>
-                      </div>
-                    ) : (
-                      <div className="multimedia-cover-placeholder">
-                        <PictureOutlined />
-                        <span>Sin portada</span>
-                      </div>
-                    )}
-                    <div className={`multimedia-kind-chip is-${metadata.kind}`}>
-                      {getKindIcon(metadata.kind)}
-                      <span>{metadata.extension ? metadata.extension.toUpperCase() : 'FILE'}</span>
-                    </div>
+            return (
+              <div key={cardKey} className="media-card">
+                <div className="media-thumb">
+                  {portadaUrl ? (
+                    <img src={portadaUrl} alt="" className="media-thumb-img" />
+                  ) : hasCoverLoading ? (
+                    <Spin size="small" />
+                  ) : (
+                    <PictureOutlined style={{ fontSize: 40, opacity: 0.1 }} />
+                  )}
+                  <div className={`media-kind-badge is-${metadata.kind}`}>
+                    {getKindIcon(metadata.kind)}
+                    <span>{metadata.extension || 'FILE'}</span>
                   </div>
+                </div>
 
-                  <div className="multimedia-item-content">
-                    <Typography.Title level={5} className="multimedia-item-title">
-                      {normalizeText(item.nombreMultimedia) || 'Sin título'}
-                    </Typography.Title>
+                <div className="media-card-body">
+                  <h3 className="media-card-title">{item.nombreMultimedia || 'Sin título'}</h3>
+                  <p className="media-card-desc">
+                    {item.descripcion || 'Sin descripción disponible para este recurso.'}
+                  </p>
+                </div>
 
-                    <Typography.Paragraph
-                      className="multimedia-item-description"
-                      ellipsis={{ rows: 3, expandable: false }}
-                    >
-                      {normalizeText(item.descripcion) || 'Sin descripción.'}
-                    </Typography.Paragraph>
+                <div className="media-card-footer">
+                  <span className="media-file-name">{item.nombreArchivo}</span>
+                  <button
+                    className="media-action-btn"
+                    title={getKindLabel(metadata.kind)}
+                    onClick={() => handleOpenMultimedia(item)}
+                    disabled={openingItemKey === cardKey}
+                  >
+                    {openingItemKey === cardKey ? <Spin size="small" style={{ color: '#fff' }} /> : <EyeOutlined />}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-                    <div className="multimedia-item-meta">
-                      <span className="multimedia-item-meta-label">Archivo:</span>
-                      <span className="multimedia-item-meta-value">{fileName}</span>
-                    </div>
-                    <div className="multimedia-item-meta">
-                      <span className="multimedia-item-meta-label">Tipo:</span>
-                      <span className="multimedia-item-meta-value">
-                        {normalizeText(item.tipoMultimedia) || 'Sin tipo'}
-                      </span>
-                    </div>
-
-                    <AppButton
-                      variant="outline"
-                      className="multimedia-open-btn"
-                      icon={<EyeOutlined />}
-                      loading={openingItemKey === cardKey}
-                      onClick={() => handleOpenMultimedia(item)}
-                    >
-                      {getKindLabel(metadata.kind)}
-                    </AppButton>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </AppCard>
-
+      {/* ── Viewer Modal ── */}
       <AppModal
         open={viewerState.open}
         title={viewerState.title || 'Vista multimedia'}
         centered={!viewerIsFullscreen}
-        wrapClassName={`multimedia-viewer-wrap${viewerIsFullscreen ? ' is-fullscreen' : ''}`}
-        onCancel={() =>
-          setViewerState({
-            open: false,
-            url: '',
-            kind: 'other',
-            title: ''
-          })
-        }
-        width={viewerIsFullscreen ? '100vw' : viewerState.kind === 'video' ? 940 : 900}
+        wrapClassName={`media-viewer-wrap${viewerIsFullscreen ? ' is-fullscreen' : ''}`}
+        onCancel={() => setViewerState({ open: false, url: '', kind: 'other', title: '' })}
+        width={viewerIsFullscreen ? '100vw' : 940}
         style={viewerIsFullscreen ? { top: 0, maxWidth: '100vw', paddingBottom: 0 } : undefined}
-        bodyStyle={
-          viewerIsFullscreen
-            ? {
-                padding: '10px 12px',
-                height: 'calc(100vh - 126px)'
-              }
-            : undefined
-        }
-        footer={
-          <div className="multimedia-viewer-footer">
-            <AppButton
-              variant="outline"
-              onClick={() => {
-                if (!viewerState.url) {
-                  return;
-                }
-
-                const target = window.open(viewerState.url, '_blank', 'noopener,noreferrer');
-                if (!target) {
-                  messageApi.warning('El navegador bloqueó la apertura externa.');
-                }
-              }}
-            >
-              Abrir en nueva ventana
-            </AppButton>
-            <AppButton
-              variant="primary"
-              onClick={() =>
-                setViewerState({
-                  open: false,
-                  url: '',
-                  kind: 'other',
-                  title: ''
-                })
-              }
-            >
-              Cerrar
-            </AppButton>
-          </div>
-        }
+        bodyStyle={viewerIsFullscreen ? { padding: '10px 12px', height: 'calc(100vh - 120px)' } : { textAlign: 'center' }}
+        footer={[
+          <AppButton key="ext" variant="outline" onClick={() => window.open(viewerState.url, '_blank')}>
+            Abrir en pestaña nueva
+          </AppButton>,
+          <AppButton key="close" variant="primary" onClick={() => setViewerState({ open: false, url: '', kind: 'other', title: '' })}>
+            Cerrar
+          </AppButton>
+        ]}
       >
         {renderViewer()}
       </AppModal>
     </div>
   );
 }
-

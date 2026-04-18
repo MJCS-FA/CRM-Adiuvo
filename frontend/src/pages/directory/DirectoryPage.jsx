@@ -78,11 +78,12 @@ function DoctorCard({ item, onAction }) {
 
   return (
     <div className="dir-card" onClick={() => onAction({ key: 'ficha' })}>
-      <div className="dir-card__avatar dir-card__avatar--doctor">
+      <div className="dir-card__avatar dir-card__avatar--doctor" style={{ background: 'var(--adiuvo-red)' }}>
         {getInitials(name)}
       </div>
       <div className="dir-card__body">
         <div className="dir-card__name">{name}</div>
+
         <div className="dir-card__detail">
           <span className="dir-card__badge dir-card__badge--specialty">{especialidad}</span>
           {categoria && <span className="dir-card__badge dir-card__badge--cat">{categoria}</span>}

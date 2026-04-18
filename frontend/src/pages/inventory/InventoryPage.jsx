@@ -215,21 +215,118 @@ export function InventoryPage() {
   }, [isReadyForQueries, normalizedFilters]);
 
   return (
-    <div className="page-wrap inventory-page">
+    <div className="inv-page">
       {contextHolder}
 
-      <div className="inventory-header">
-        <button
-          type="button"
-          className="inventory-back-link"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeftOutlined />
-          Regresar
-        </button>
+      <style>{`
+        .inv-page { display: flex; flex-direction: column; gap: 20px; }
+
+        .inv-header {
+          display: flex; align-items: center; justify-content: space-between;
+        }
+        .inv-header-title { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; }
+        .inv-header-sub { font-size: 13px; color: var(--text-tertiary); margin-top: 2px; }
+
+        .inv-tabs-wrap {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .inv-filters-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          padding: 20px 24px;
+          display: flex; gap: 16px; align-items: flex-end;
+          box-shadow: var(--shadow-xs);
+          flex-wrap: wrap;
+        }
+        .inv-filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 180px; }
+        .inv-filter-label { font-size: 11px; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .inv-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+          gap: 14px;
+        }
+        .inv-product-card {
+          background: var(--bg-card);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          padding: 20px;
+          display: flex; flex-direction: column; gap: 12px;
+          box-shadow: var(--shadow-xs);
+          transition: all var(--duration-normal) var(--ease-out);
+          position: relative; overflow: hidden;
+        }
+        .inv-product-card::before {
+          content: '';
+          position: absolute; top: 0; left: 0; right: 0; height: 3px;
+          background: linear-gradient(90deg, var(--adiuvo-red), var(--adiuvo-red-deep));
+        }
+        .inv-product-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        .inv-product-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .inv-product-name { font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 1.3; flex: 1; }
+        .inv-product-code {
+          padding: 3px 10px; border-radius: var(--radius-full);
+          background: var(--adiuvo-red-light); color: var(--adiuvo-red);
+          font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+        }
+        .inv-product-sku { font-size: 12px; color: var(--text-tertiary); font-family: 'Courier New', monospace; }
+        .inv-product-type {
+          display: inline-flex; align-items: center;
+          padding: 4px 10px; border-radius: var(--radius-full);
+          background: var(--bg-subtle); color: var(--text-secondary);
+          font-size: 11px; font-weight: 600; width: fit-content;
+        }
+        .inv-product-stock {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 10px 14px; border-radius: var(--radius-md);
+          background: var(--bg-subtle); margin-top: 4px;
+        }
+        .inv-product-stock-lbl { font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+        .inv-product-stock-val { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+        .inv-product-action {
+          display: flex; align-items: center; justify-content: center; gap: 6px;
+          padding: 8px; border-radius: var(--radius-md);
+          border: 1.5px solid var(--border-default); background: transparent;
+          font-size: 13px; font-weight: 600; color: var(--text-secondary);
+          cursor: pointer; transition: all var(--duration-fast) var(--ease-out); width: 100%;
+        }
+        .inv-product-action:hover { border-color: var(--adiuvo-red); color: var(--adiuvo-red); background: var(--adiuvo-red-light); }
+
+        .inv-empty {
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 12px; padding: 60px 24px;
+          background: var(--bg-card); border-radius: var(--radius-lg);
+          border: 1px solid var(--border-default);
+        }
+        .inv-empty-icon { font-size: 48px; opacity: 0.25; }
+        .inv-empty-text { font-size: 15px; font-weight: 600; color: var(--text-tertiary); }
+
+        .inv-skeleton {
+          background: var(--bg-card); border-radius: var(--radius-lg);
+          height: 180px; border: 1px solid var(--border-default);
+          animation: invSkel 1.5s ease-in-out infinite;
+        }
+        @keyframes invSkel { 0%,100%{opacity:1} 50%{opacity:.5} }
+      `}</style>
+
+      {/* ── Header ── */}
+      <div className="inv-header">
+        <div>
+          <div className="inv-header-title">Inventario</div>
+          <div className="inv-header-sub">
+            {inventoryContext?.codigoVisitador ? `Visitador ${inventoryContext.codigoVisitador}` : 'Muestras médicas y pedidos'}
+          </div>
+        </div>
       </div>
 
-      <AppCard className="inventory-tabs-card" loading={loadingBootstrap}>
+      {/* ── Tabs ── */}
+      <div className="inv-tabs-wrap">
         <Tabs
           className="inventory-tabs"
           defaultActiveKey="mi-inventario"
@@ -238,134 +335,85 @@ export function InventoryPage() {
               key: 'mi-inventario',
               label: 'Mi Inventario',
               children: (
-                <div className="inventory-tab-content">
-                  <Typography.Title level={4} className="inventory-tab-title">
-                    Inventario de muestras
-                  </Typography.Title>
-
-                  <AppCard className="inventory-filters-card">
-                    <Row gutter={[12, 12]}>
-                      <Col xs={24} md={8}>
-                        <Typography.Text className="inventory-filter-label">
-                          Código Producto
-                        </Typography.Text>
-                        <AppInput
-                          placeholder="Escriba..."
-                          value={filters.codigoProducto}
-                          onChange={(event) =>
-                            setFilters((current) => ({
-                              ...current,
-                              codigoProducto: String(event.target.value || '').replace(
-                                /[^\d]/g,
-                                ''
-                              )
-                            }))
-                          }
-                        />
-                      </Col>
-
-                      <Col xs={24} md={8}>
-                        <Typography.Text className="inventory-filter-label">
-                          Producto
-                        </Typography.Text>
-                        <AppSelect
-                          allowClear
-                          showSearch
-                          optionFilterProp="label"
-                          placeholder="Seleccionar..."
-                          options={productOptions}
-                          value={filters.productoCodigo}
-                          onSearch={(value) =>
-                            setFilters((current) => ({
-                              ...current,
-                              productoSearch: String(value || '')
-                            }))
-                          }
-                          onChange={(value) =>
-                            setFilters((current) => ({
-                              ...current,
-                              productoCodigo: value || undefined,
-                              productoSearch:
-                                value && value > 0
-                                  ? String(
-                                      productOptions.find(
-                                        (item) => Number(item.value) === Number(value)
-                                      )?.sku || ''
-                                    )
-                                  : ''
-                            }))
-                          }
-                        />
-                      </Col>
-
-                      <Col xs={24} md={8}>
-                        <Typography.Text className="inventory-filter-label">
-                          Tipo Producto
-                        </Typography.Text>
-                        <AppSelect
-                          allowClear
-                          showSearch
-                          optionFilterProp="label"
-                          placeholder="Seleccionar..."
-                          options={typeOptions}
-                          value={filters.tipoProducto}
-                          onChange={(value) =>
-                            setFilters((current) => ({
-                              ...current,
-                              tipoProducto: value || undefined
-                            }))
-                          }
-                        />
-                      </Col>
-                    </Row>
-                  </AppCard>
-
-                  <AppCard
-                    title={
-                      <span>
-                        Mi Inventario
-                        {inventoryContext?.codigoVisitador
-                          ? ` - Visitador ${inventoryContext.codigoVisitador}`
-                          : ''}
-                      </span>
-                    }
-                    className="inventory-grid-card"
-                  >
-                    {loadingInventory ? (
-                      <div className="inventory-placeholder">Cargando inventario...</div>
-                    ) : inventoryItems.length === 0 ? (
-                      <Empty description="Sin resultados de inventario disponible." />
-                    ) : (
-                      <AppTable
-                        rowKey={(record) =>
-                          `${record.codigoProducto}-${record.tipoProducto}`
-                        }
-                        className="inventory-table-friendly"
-                        columns={inventoryColumns}
-                        dataSource={inventoryItems}
-                        pagination={{
-                          pageSize: 12,
-                          showSizeChanger: false
-                        }}
+                <div style={{ padding: '0 24px 24px' }}>
+                  {/* Filters */}
+                  <div className="inv-filters-card" style={{ margin: '0 0 20px', borderRadius: 'var(--radius-md)' }}>
+                    <div className="inv-filter-group">
+                      <span className="inv-filter-label">Código Producto</span>
+                      <AppInput
+                        placeholder="Número..."
+                        value={filters.codigoProducto}
+                        onChange={(e) => setFilters((c) => ({ ...c, codigoProducto: String(e.target.value || '').replace(/[^\d]/g, '') }))}
                       />
-                    )}
-                  </AppCard>
+                    </div>
+                    <div className="inv-filter-group">
+                      <span className="inv-filter-label">Producto</span>
+                      <AppSelect
+                        allowClear showSearch optionFilterProp="label"
+                        placeholder="Seleccionar..."
+                        options={productOptions}
+                        value={filters.productoCodigo}
+                        onSearch={(v) => setFilters((c) => ({ ...c, productoSearch: String(v || '') }))}
+                        onChange={(v) => setFilters((c) => ({ ...c, productoCodigo: v || undefined, productoSearch: v && v > 0 ? String(productOptions.find((i) => Number(i.value) === Number(v))?.sku || '') : '' }))}
+                      />
+                    </div>
+                    <div className="inv-filter-group">
+                      <span className="inv-filter-label">Tipo</span>
+                      <AppSelect
+                        allowClear showSearch optionFilterProp="label"
+                        placeholder="Todos..."
+                        options={typeOptions}
+                        value={filters.tipoProducto}
+                        onChange={(v) => setFilters((c) => ({ ...c, tipoProducto: v || undefined }))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Product Grid */}
+                  {loadingBootstrap || loadingInventory ? (
+                    <div className="inv-grid">
+                      {[1,2,3,4,5,6].map((i) => <div key={i} className="inv-skeleton" />)}
+                    </div>
+                  ) : inventoryItems.length === 0 ? (
+                    <div className="inv-empty">
+                      <span className="inv-empty-icon">📦</span>
+                      <span className="inv-empty-text">Sin resultados de inventario</span>
+                    </div>
+                  ) : (
+                    <div className="inv-grid">
+                      {inventoryItems.map((item) => (
+                        <div key={`${item.codigoProducto}-${item.tipoProducto}`} className="inv-product-card">
+                          <div className="inv-product-header">
+                            <span className="inv-product-name">{item.nombreProducto || 'Sin nombre'}</span>
+                            <span className="inv-product-code">#{item.codigoProducto}</span>
+                          </div>
+                          {item.sku && <span className="inv-product-sku">SKU: {item.sku}</span>}
+                          {item.tipoProductoDescripcion && (
+                            <span className="inv-product-type">{item.tipoProductoDescripcion}</span>
+                          )}
+                          <div className="inv-product-stock">
+                            <span className="inv-product-stock-lbl">Disponible</span>
+                            <span className="inv-product-stock-val">{item.disponible ?? '—'}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="inv-product-action"
+                            onClick={() => navigate(`/inventario/detalle/${item.codigoProducto}`, { state: { inventoryItem: item } })}
+                          >
+                            <FileSearchOutlined /> Ver Detalle
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )
             },
-            {
-              key: 'ordenes',
-              label: 'Órdenes',
-              children: <InventoryOrdersSection />
-            },
-            {
-              key: 'solicitudes',
-              label: 'Solicitudes',
-              children: <InventoryRequestsSection />
-            }
+            { key: 'ordenes', label: 'Órdenes', children: <InventoryOrdersSection /> },
+            { key: 'solicitudes', label: 'Solicitudes', children: <InventoryRequestsSection /> }
           ]}
         />
-      </AppCard>
+      </div>
     </div>
   );
 }
